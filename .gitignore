@@ -1,0 +1,17 @@
+# C# / Visual Studio
+bin/
+obj/
+.vs/
+*.user
+*.suo
+
+# Python
+.venv/
+venv/
+__pycache__/
+*.pyc
+
+# Videor & tunga ML-modeller
+*.mov
+*.mp4
+*.task
