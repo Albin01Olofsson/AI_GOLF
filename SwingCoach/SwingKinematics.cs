@@ -11,6 +11,7 @@
         public double AddressSpineAngle { get; set; }
         public double ImpactSpineAngle { get; set; }
         public double SpineAngleDifference => AddressSpineAngle - ImpactSpineAngle;
+        public bool HasOverTheTop { get; set; }
         public bool HasEarlyExtension => SpineAngleDifference > 6.0; // Tappat mer än 6 graders framåtlutning
         public string CoachFeedback { get; set; } = string.Empty;
 
@@ -108,6 +109,8 @@
             double addrAngle = CalculateSpineTilt(addrShoulder, addrHip);
             double impAngle = CalculateSpineTilt(impShoulder, impHip);
 
+            bool isOverTheTop = DetectOverTheTop(frames, topIndex, impactIndex);
+
 
 
             return new SwingAnalysisResult
@@ -120,38 +123,14 @@
                 ImpactFrame = impactFrame.FrameIndex,
                 CoachFeedback = feedback,
                 AddressSpineAngle = addrAngle,
-                ImpactSpineAngle = impAngle
+                ImpactSpineAngle = impAngle,
+                HasOverTheTop = isOverTheTop,
             };
 
 
 
         }
-        /// <summary>
-        /// Beräknar vinkeln i grader vid punkt B mellan linjerna AB och BC (2D-vektorer).
-        /// </summary>
-        private static double CalculateAngle(LandmarkPoint a, LandmarkPoint b, LandmarkPoint c)
-        {
-            // Vektor BA (från B mot A) och Vektor BC (från B mot C)
-            double v1x = a.X - b.X;
-            double v1y = a.Y - b.Y;
-            double v2x = c.X - b.X;
-            double v2y = c.Y - b.Y;
 
-            // Skalärprodukt (dot product)
-            double dot = (v1x * v2x) + (v1y * v2y);
-
-            // Vektorlängder (magnituder)
-            double mag1 = Math.Sqrt(v1x * v1x + v1y * v1y);
-            double mag2 = Math.Sqrt(v2x * v2x + v2y * v2y);
-
-            if (mag1 == 0 || mag2 == 0) return 0.0;
-
-            // Beräkna cosinus för vinkeln och begränsa till [-1, 1] för avrundningsfel
-            double cosTheta = Math.Clamp(dot / (mag1 * mag2), -1.0, 1.0);
-
-            // Räkna om radianer till grader
-            return Math.Acos(cosTheta) * (180.0 / Math.PI);
-        }
         /// <summary>
         /// Beräknar överkroppens framåtlutning i grader relativt vertikalen (lodlinjen).
         /// 0° = står spikrakt upp, 45° = lutar framåt 45 grader.
@@ -195,6 +174,29 @@
                 Y = validPoints.Average(p => p.Y),
                 Z = validPoints.Average(p => p.Z)
             };
+        }
+
+        private static bool DetectOverTheTop(List<SwingFrameData> frames, int topIndex, int impactIndex)
+        {
+            if (topIndex >= impactIndex || topIndex < 0 || impactIndex >= frames.Count)
+                return false;
+
+            // Använder höger handled som referens
+            var wristAtTop = frames[topIndex].RightWrist;
+            int checkFramesCount = Math.Min(5, impactIndex - topIndex);
+
+            for (int i = 1; i <= checkFramesCount; i++)
+            {
+                var currentWrist = frames[topIndex + i].RightWrist;
+
+                // Om händerna rör sig för långt ut i sidled (X-axeln) direkt efter toppen
+                if (currentWrist.X > wristAtTop.X + 0.04)
+                {
+                    return true;
+                }
+            }
+
+            return false;
         }
     }
 }

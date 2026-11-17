@@ -49,6 +49,11 @@
                 {
                     Console.WriteLine("Bra jobbat! Du behåller din framåtlutning genom träffögonblicket.");
                 }
+
+                if (analysis.HasOverTheTop)
+                {
+                    Console.WriteLine("VARNING: Over-the-Top upptäckt! Klubban kommer utifrån och in.");
+                }
             }
             catch (Exception ex)
             {
